@@ -1,103 +1,525 @@
-import Image from "next/image";
+// import Image from "next/image";
 
-export default function Home() {
+// export default function Home() {
+//   return (
+//     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
+//       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
+//         <Image
+//           className="dark:invert"
+//           src="/next.svg"
+//           alt="Next.js logo"
+//           width={180}
+//           height={38}
+//           priority
+//         />
+//         <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
+//           <li className="mb-2 tracking-[-.01em]">
+//             Get started by editing{" "}
+//             <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
+//               app/page.tsx
+//             </code>
+//             .
+//           </li>
+//           <li className="tracking-[-.01em]">
+//             Save and see your changes instantly.
+//           </li>
+//         </ol>
+
+//         <div className="flex gap-4 items-center flex-col sm:flex-row">
+//           <a
+//             className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
+//             href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+//             target="_blank"
+//             rel="noopener noreferrer"
+//           >
+//             <Image
+//               className="dark:invert"
+//               src="/vercel.svg"
+//               alt="Vercel logomark"
+//               width={20}
+//               height={20}
+//             />
+//             Deploy now
+//           </a>
+//           <a
+//             className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
+//             href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+//             target="_blank"
+//             rel="noopener noreferrer"
+//           >
+//             Read our docs
+//           </a>
+//         </div>
+//       </main>
+//       <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
+//         <a
+//           className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+//           href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+//           target="_blank"
+//           rel="noopener noreferrer"
+//         >
+//           <Image
+//             aria-hidden
+//             src="/file.svg"
+//             alt="File icon"
+//             width={16}
+//             height={16}
+//           />
+//           Learn
+//         </a>
+//         <a
+//           className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+//           href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+//           target="_blank"
+//           rel="noopener noreferrer"
+//         >
+//           <Image
+//             aria-hidden
+//             src="/window.svg"
+//             alt="Window icon"
+//             width={16}
+//             height={16}
+//           />
+//           Examples
+//         </a>
+//         <a
+//           className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+//           href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+//           target="_blank"
+//           rel="noopener noreferrer"
+//         >
+//           <Image
+//             aria-hidden
+//             src="/globe.svg"
+//             alt="Globe icon"
+//             width={16}
+//             height={16}
+//           />
+//           Go to nextjs.org →
+//         </a>
+//       </footer>
+//     </div>
+//   );
+// }
+
+"use client"
+
+import { useState, useEffect, useCallback } from "react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Plus, Search, Edit, Trash2, FileText, Filter, X, SortAsc, SortDesc } from "lucide-react"
+import type { Note } from "@/lib/storage"
+
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value)
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value)
+    }, delay)
+
+    return () => {
+      clearTimeout(handler)
+    }
+  }, [value, delay])
+
+  return debouncedValue
+}
+
+type SortOption = "updated-desc" | "updated-asc" | "title-asc" | "title-desc" | "created-desc" | "created-asc"
+
+export default function HomePage() {
+  const [notes, setNotes] = useState<Note[]>([])
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState<string>("all")
+  const [sortBy, setSortBy] = useState<SortOption>("updated-desc")
+  const [categories, setCategories] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showFilters, setShowFilters] = useState(false)
+
+  const debouncedSearchQuery = useDebounce(searchQuery, 300)
+
+  useEffect(() => {
+    fetchNotes()
+    fetchCategories()
+  }, [debouncedSearchQuery, selectedCategory])
+
+  useEffect(() => {
+    if (notes.length > 0) {
+      sortNotes()
+    }
+  }, [sortBy])
+
+  const fetchNotes = async () => {
+    try {
+      const params = new URLSearchParams()
+      if (debouncedSearchQuery) params.append("query", debouncedSearchQuery)
+      if (selectedCategory !== "all") params.append("category", selectedCategory)
+
+      const response = await fetch(`/api/notes?${params}`)
+      const data = await response.json()
+      setNotes(data.notes || [])
+    } catch (error) {
+      console.error("Error fetching notes:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch("/api/categories")
+      const data = await response.json()
+      setCategories(data.categories || [])
+    } catch (error) {
+      console.error("Error fetching categories:", error)
+    }
+  }
+
+  const sortNotes = useCallback(() => {
+    const sortedNotes = [...notes].sort((a, b) => {
+      switch (sortBy) {
+        case "updated-desc":
+          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        case "updated-asc":
+          return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()
+        case "created-desc":
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        case "created-asc":
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        case "title-asc":
+          return a.title.localeCompare(b.title)
+        case "title-desc":
+          return b.title.localeCompare(a.title)
+        default:
+          return 0
+      }
+    })
+    setNotes(sortedNotes)
+  }, [notes, sortBy])
+
+  const deleteNote = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this note?")) return
+
+    try {
+      const response = await fetch(`/api/notes/${id}`, {
+        method: "DELETE",
+      })
+
+      if (response.ok) {
+        setNotes(notes.filter((note) => note.id !== id))
+      }
+    } catch (error) {
+      console.error("Error deleting note:", error)
+    }
+  }
+
+  const clearFilters = () => {
+    setSearchQuery("")
+    setSelectedCategory("all")
+    setSortBy("updated-desc")
+  }
+
+  const hasActiveFilters = searchQuery || selectedCategory !== "all" || sortBy !== "updated-desc"
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
+
+  const truncateContent = (content: string, maxLength = 150) => {
+    if (content.length <= maxLength) return content
+    return content.substring(0, maxLength) + "..."
+  }
+
+  const getSortLabel = (sort: SortOption) => {
+    const labels = {
+      "updated-desc": "Recently Updated",
+      "updated-asc": "Oldest Updated",
+      "created-desc": "Recently Created",
+      "created-asc": "Oldest Created",
+      "title-asc": "Title A-Z",
+      "title-desc": "Title Z-A",
+    }
+    return labels[sort]
+  }
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-2">
+              <FileText className="h-8 w-8 text-primary" />
+              <h1 className="text-2xl font-bold text-foreground">NotesApp</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
+                <Filter className="h-4 w-4 mr-2" />
+                Filters
+              </Button>
+              <Button asChild>
+                <Link href="/notes/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Note
+                </Link>
+              </Button>
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Enhanced Search and Filter Section */}
+        <div className="mb-8 space-y-4">
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search notes by title or content..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-10"
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+                onClick={() => setSearchQuery("")}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+
+          {/* Collapsible Filters */}
+          {showFilters && (
+            <Card className="p-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium text-foreground">Filters & Sorting</h3>
+                  {hasActiveFilters && (
+                    <Button variant="ghost" size="sm" onClick={clearFilters}>
+                      <X className="h-4 w-4 mr-2" />
+                      Clear All
+                    </Button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Category Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">Category</label>
+                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        {categories.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Sort Options */}
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">Sort By</label>
+                    <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sort by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="updated-desc">
+                          <div className="flex items-center">
+                            <SortDesc className="h-4 w-4 mr-2" />
+                            Recently Updated
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="updated-asc">
+                          <div className="flex items-center">
+                            <SortAsc className="h-4 w-4 mr-2" />
+                            Oldest Updated
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="created-desc">
+                          <div className="flex items-center">
+                            <SortDesc className="h-4 w-4 mr-2" />
+                            Recently Created
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="created-asc">
+                          <div className="flex items-center">
+                            <SortAsc className="h-4 w-4 mr-2" />
+                            Oldest Created
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="title-asc">
+                          <div className="flex items-center">
+                            <SortAsc className="h-4 w-4 mr-2" />
+                            Title A-Z
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="title-desc">
+                          <div className="flex items-center">
+                            <SortDesc className="h-4 w-4 mr-2" />
+                            Title Z-A
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Quick Category Filters */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={selectedCategory === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedCategory("all")}
+            >
+              All Notes ({notes.length})
+            </Button>
+            {categories.map((category) => (
+              <Button
+                key={category}
+                variant={selectedCategory === category ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedCategory(category)}
+              >
+                {category}
+              </Button>
+            ))}
+          </div>
+
+          {/* Active Filters Display */}
+          {hasActiveFilters && (
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              <span>Active filters:</span>
+              {searchQuery && (
+                <Badge variant="secondary" className="gap-1">
+                  Search: "{searchQuery}"
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0 hover:bg-transparent"
+                    onClick={() => setSearchQuery("")}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              )}
+              {selectedCategory !== "all" && (
+                <Badge variant="secondary" className="gap-1">
+                  Category: {selectedCategory}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0 hover:bg-transparent"
+                    onClick={() => setSelectedCategory("all")}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              )}
+              {sortBy !== "updated-desc" && (
+                <Badge variant="secondary" className="gap-1">
+                  Sort: {getSortLabel(sortBy)}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0 hover:bg-transparent"
+                    onClick={() => setSortBy("updated-desc")}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Notes Grid */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-muted-foreground">Loading notes...</div>
+          </div>
+        ) : notes.length === 0 ? (
+          <div className="text-center py-12">
+            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">No notes found</h3>
+            <p className="text-muted-foreground mb-4">
+              {searchQuery || selectedCategory !== "all"
+                ? "Try adjusting your search or filter criteria."
+                : "Get started by creating your first note."}
+            </p>
+            {hasActiveFilters && (
+              <Button variant="outline" onClick={clearFilters} className="mr-2 bg-transparent">
+                Clear Filters
+              </Button>
+            )}
+            <Button asChild>
+              <Link href="/notes/new">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Note
+              </Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {notes.map((note) => (
+              <Card key={note.id} className="group hover:shadow-lg transition-all duration-200">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <h3 className="font-semibold text-lg leading-tight line-clamp-2">{note.title}</h3>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/notes/${note.id}/edit`}>
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => deleteNote(note.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  {note.category && (
+                    <Badge variant="secondary" className="w-fit">
+                      {note.category}
+                    </Badge>
+                  )}
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <p className="text-muted-foreground text-sm mb-4 line-clamp-4">{truncateContent(note.content)}</p>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Updated {formatDate(note.updatedAt)}</span>
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link href={`/notes/${note.id}`}>View</Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
-  );
+  )
 }
