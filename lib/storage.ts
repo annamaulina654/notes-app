@@ -304,7 +304,7 @@ export const storageHelpers = {
       notes = notes.filter((note) => note.category === category)
     }
 
-    return notes.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+    return notes
   },
 
   getCategories: (): string[] => {

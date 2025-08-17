@@ -4,7 +4,7 @@ import { storageHelpers } from "@/lib/storage"
 // GET /api/notes - Get all notes with optional search and category filtering
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = request.nextUrl
     const query = searchParams.get("query") || undefined
     const category = searchParams.get("category") || undefined
 
