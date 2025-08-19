@@ -7,6 +7,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
     const query = searchParams.get("query") || undefined;
     const category = searchParams.get("category") || undefined;
+    const sortBy = searchParams.get("sortBy") || "updated-desc"; // Ambil parameter sortBy
+
+    // Objek untuk menampung konfigurasi pengurutan Prisma
+    const orderBy: any = {};
+    const [field, direction] = sortBy.split('-');
+
+    if (["updated", "created", "title"].includes(field)) {
+      orderBy[field === 'updated' ? 'updatedAt' : field === 'created' ? 'createdAt' : 'title'] = direction;
+    }
 
     const notes = await prisma.note.findMany({
       where: {
@@ -20,9 +29,7 @@ export async function GET(request: NextRequest) {
           category && category !== 'all' ? { category: { equals: category } } : {},
         ],
       },
-      orderBy: {
-        updatedAt: 'desc',
-      },
+      orderBy, // Terapkan pengurutan di sini
     });
 
     return NextResponse.json({ notes });

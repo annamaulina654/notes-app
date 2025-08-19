@@ -26,40 +26,46 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue
 }
 
-type SortOption = "updated-desc" | "updated-asc" | "title-asc" | "title-desc" | "created-desc" | "created-asc"
+type SortOption = "updated-desc" | "updated-asc" | "title-asc" | "title-desc" | "created-desc" | "created-asc";
 
 export default function HomePage() {
-  const [notes, setNotes] = useState<Note[]>([])
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState<string>("all")
-  const [sortBy, setSortBy] = useState<SortOption>("updated-desc")
-  const [categories, setCategories] = useState<string[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showFilters, setShowFilters] = useState(false)
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<SortOption>("updated-desc");
+  const [categories, setCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
 
-  const debouncedSearchQuery = useDebounce(searchQuery, 300)
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  // Ganti `useEffect` ini untuk menyertakan `sortBy`
+  useEffect(() => {
+    fetchNotes();
+    // fetchCategories hanya perlu dipanggil sekali
+  }, [debouncedSearchQuery, selectedCategory, sortBy]);
 
   useEffect(() => {
-    fetchNotes()
-    fetchCategories()
-  }, [debouncedSearchQuery, selectedCategory])
+    fetchCategories();
+  }, []);
 
   const fetchNotes = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams()
-      if (debouncedSearchQuery) params.append("query", debouncedSearchQuery)
-      if (selectedCategory !== "all") params.append("category", selectedCategory)
+      const params = new URLSearchParams();
+      if (debouncedSearchQuery) params.append("query", debouncedSearchQuery);
+      if (selectedCategory !== "all") params.append("category", selectedCategory);
+      params.append("sortBy", sortBy); // <-- Tambahkan parameter sortBy
 
-      const response = await fetch(`/api/notes?${params}`)
-      const data = await response.json()
-      setNotes(data.notes || [])
+      const response = await fetch(`/api/notes?${params}`);
+      const data = await response.json();
+      setNotes(data.notes || []);
     } catch (error) {
-      console.error("Error fetching notes:", error)
+      console.error("Error fetching notes:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const fetchCategories = async () => {
     try {
