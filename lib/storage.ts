@@ -9,29 +9,6 @@ interface User {
   createdAt: Date
 }
 
-interface Destination {
-  id: string
-  name: string
-  description: string
-  price: number
-  category: string
-  location: string
-  image: string
-  createdAt: Date
-}
-
-interface Booking {
-  id: string
-  userId: string
-  destinationId: string
-  visitDate: Date
-  quantity: number
-  totalPrice: number
-  customerName: string
-  customerEmail: string
-  customerPhone: string
-  createdAt: Date
-}
 
 interface Note {
   id: string
@@ -45,128 +22,13 @@ interface Note {
 // In-memory storage
 const storage = {
   users: new Map<string, User>(),
-  destinations: new Map<string, Destination>(),
-  bookings: new Map<string, Booking>(),
   notes: new Map<string, Note>(),
 }
 
-// Initialize with sample destinations
-const sampleDestinations: Omit<Destination, "id" | "createdAt">[] = [
-  {
-    name: "Borobudur Temple",
-    description: "Ancient Buddhist temple and UNESCO World Heritage site with stunning sunrise views",
-    price: 350000,
-    category: "Cultural",
-    location: "Central Java",
-    image: "/borobudur-sunrise.png",
-  },
-  {
-    name: "Komodo National Park",
-    description: "Home to the legendary Komodo dragons and pristine marine biodiversity",
-    price: 2500000,
-    category: "Nature",
-    location: "East Nusa Tenggara",
-    image: "/komodo-dragon-national-park.png",
-  },
-  {
-    name: "Raja Ampat Islands",
-    description: "World-class diving destination with incredible marine life and coral reefs",
-    price: 3500000,
-    category: "Adventure",
-    location: "West Papua",
-    image: "/raja-ampat-diving.png",
-  },
-  {
-    name: "Ubud Rice Terraces",
-    description: "Breathtaking terraced rice fields and traditional Balinese culture",
-    price: 150000,
-    category: "Nature",
-    location: "Bali",
-    image: "/ubud-rice-terraces.png",
-  },
-  {
-    name: "Mount Bromo",
-    description: "Active volcano with spectacular sunrise views and lunar-like landscape",
-    price: 450000,
-    category: "Adventure",
-    location: "East Java",
-    image: "/mount-bromo-sunrise.png",
-  },
-  {
-    name: "Tana Toraja",
-    description: "Unique highland culture with traditional houses and ancient burial sites",
-    price: 800000,
-    category: "Cultural",
-    location: "South Sulawesi",
-    image: "/tana-toraja-traditional.png",
-  },
-  {
-    name: "Gili Islands",
-    description: "Tropical paradise with crystal clear waters and vibrant coral reefs",
-    price: 650000,
-    category: "Beach",
-    location: "Lombok",
-    image: "/gili-islands-beach.png",
-  },
-  {
-    name: "Ancol Dreamland",
-    description: "Jakarta's premier entertainment complex with theme parks and beaches",
-    price: 200000,
-    category: "Entertainment",
-    location: "Jakarta",
-    image: "/ancol-dreamland.png",
-  },
-]
 
-// Initialize destinations
-sampleDestinations.forEach((dest, index) => {
-  const destination: Destination = {
-    ...dest,
-    id: (index + 1).toString(),
-    createdAt: new Date(),
-  }
-  storage.destinations.set(destination.id, destination)
-})
 
-// Initialize with sample notes
-const sampleNotes: Omit<Note, "id" | "createdAt" | "updatedAt">[] = [
-  {
-    title: "Meeting Notes",
-    content: "Discussed project timeline and deliverables. Need to follow up on budget approval.",
-    category: "Work",
-  },
-  {
-    title: "Grocery List",
-    content: "Milk, eggs, bread, apples, chicken, rice, vegetables",
-    category: "Personal",
-  },
-  {
-    title: "Book Ideas",
-    content: "1. The Art of Clean Code\n2. Modern Web Development\n3. Building Scalable Applications",
-    category: "Ideas",
-  },
-  {
-    title: "Travel Plans",
-    content: "Visit Japan in spring 2024. Research cherry blossom season and book flights early.",
-    category: "Travel",
-  },
-  {
-    title: "Recipe: Pasta Carbonara",
-    content: "Ingredients: pasta, eggs, pancetta, parmesan, black pepper. Cook pasta, mix with egg mixture off heat.",
-    category: "Recipes",
-  },
-]
 
-// Initialize notes
-sampleNotes.forEach((note, index) => {
-  const newNote: Note = {
-    ...note,
-    id: (index + 1).toString(),
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }
-  storage.notes.set(newNote.id, newNote)
-})
+
 
 // Helper functions
 export const storageHelpers = {
@@ -195,62 +57,9 @@ export const storageHelpers = {
     return storage.users.get(id) || null
   },
 
-  // Destinations
-  getAllDestinations: (): Destination[] => {
-    return Array.from(storage.destinations.values())
-  },
 
-  findDestinationById: (id: string): Destination | null => {
-    return storage.destinations.get(id) || null
-  },
 
-  searchDestinations: (query?: string, category?: string, location?: string): Destination[] => {
-    let destinations = Array.from(storage.destinations.values())
 
-    if (query) {
-      const searchTerm = query.toLowerCase()
-      destinations = destinations.filter(
-        (dest) => dest.name.toLowerCase().includes(searchTerm) || dest.description.toLowerCase().includes(searchTerm),
-      )
-    }
-
-    if (category && category !== "all") {
-      destinations = destinations.filter((dest) => dest.category === category)
-    }
-
-    if (location && location !== "all") {
-      destinations = destinations.filter((dest) => dest.location === location)
-    }
-
-    return destinations
-  },
-
-  // Bookings
-  createBooking: (bookingData: Omit<Booking, "id" | "createdAt">): Booking => {
-    const id = Date.now().toString()
-    const booking: Booking = {
-      ...bookingData,
-      id,
-      createdAt: new Date(),
-    }
-    storage.bookings.set(id, booking)
-    return booking
-  },
-
-  getBookingsByUserId: (userId: string): (Booking & { destination: Destination })[] => {
-    const userBookings = Array.from(storage.bookings.values())
-      .filter((booking) => booking.userId === userId)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-
-    return userBookings.map((booking) => {
-      const destination = storage.destinations.get(booking.destinationId)!
-      return { ...booking, destination }
-    })
-  },
-
-  getAllBookings: (): Booking[] => {
-    return Array.from(storage.bookings.values())
-  },
 
   // Notes
   getAllNotes: (): Note[] => {

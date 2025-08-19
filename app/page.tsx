@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,7 +30,6 @@ type SortOption = "updated-desc" | "updated-asc" | "title-asc" | "title-desc" | 
 
 export default function HomePage() {
   const [notes, setNotes] = useState<Note[]>([])
-  const [allNotes, setAllNotes] = useState<Note[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [sortBy, setSortBy] = useState<SortOption>("updated-desc")
@@ -43,17 +42,17 @@ export default function HomePage() {
   useEffect(() => {
     fetchNotes()
     fetchCategories()
-  }, [])
-
-  useEffect(() => {
-    filterAndSortNotes()
-  }, [debouncedSearchQuery, selectedCategory, sortBy, allNotes])
+  }, [debouncedSearchQuery, selectedCategory])
 
   const fetchNotes = async () => {
+    setLoading(true);
     try {
-      const response = await fetch(`/api/notes`)
+      const params = new URLSearchParams()
+      if (debouncedSearchQuery) params.append("query", debouncedSearchQuery)
+      if (selectedCategory !== "all") params.append("category", selectedCategory)
+
+      const response = await fetch(`/api/notes?${params}`)
       const data = await response.json()
-      setAllNotes(data.notes || [])
       setNotes(data.notes || [])
     } catch (error) {
       console.error("Error fetching notes:", error)
@@ -72,37 +71,6 @@ export default function HomePage() {
     }
   }
 
-  const filterAndSortNotes = () => {
-    let filteredNotes = allNotes.filter(note => {
-      const queryMatch = !debouncedSearchQuery ||
-        note.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        note.content.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
-      const categoryMatch = selectedCategory === "all" || note.category === selectedCategory
-      return queryMatch && categoryMatch
-    })
-
-    const sortedNotes = [...filteredNotes].sort((a, b) => {
-      switch (sortBy) {
-        case "updated-desc":
-          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-        case "updated-asc":
-          return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()
-        case "created-desc":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        case "created-asc":
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        case "title-asc":
-          return a.title.localeCompare(b.title)
-        case "title-desc":
-          return b.title.localeCompare(a.title)
-        default:
-          return 0
-      }
-    })
-    setNotes(sortedNotes)
-  }
-
-
   const deleteNote = async (id: string) => {
     if (!confirm("Are you sure you want to delete this note?")) return
 
@@ -112,7 +80,7 @@ export default function HomePage() {
       })
 
       if (response.ok) {
-        setAllNotes(allNotes.filter((note) => note.id !== id))
+        setNotes(notes.filter((note) => note.id !== id))
       }
     } catch (error) {
       console.error("Error deleting note:", error)
@@ -296,7 +264,7 @@ export default function HomePage() {
               size="sm"
               onClick={() => setSelectedCategory("all")}
             >
-              All Notes ({allNotes.length})
+              All Notes
             </Button>
             {categories.map((category) => (
               <Button
