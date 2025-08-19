@@ -11,6 +11,19 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Save, Trash2 } from "lucide-react"
 import type { Note } from "@/lib/storage"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { toast } from "sonner";
+
 
 export default function EditNotePage() {
   const params = useParams()
@@ -50,17 +63,14 @@ export default function EditNotePage() {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSave = async () => {
     if (!title.trim() || !content.trim() || !note) return
 
     setSaving(true)
     try {
       const response = await fetch(`/api/notes/${note.id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: title.trim(),
           content: content.trim(),
@@ -69,35 +79,35 @@ export default function EditNotePage() {
       })
 
       if (response.ok) {
+        toast.success("Note has been updated successfully.")
         router.push(`/notes/${note.id}`)
       } else {
         const error = await response.json()
-        alert(error.error || "Failed to update note")
+        toast.error("Uh oh! Something went wrong.", { description: error.error || "Failed to update note" })
       }
     } catch (error) {
       console.error("Error updating note:", error)
-      alert("Failed to update note")
+      toast.error("Uh oh! Something went wrong.", { description: "Failed to update note" })
     } finally {
       setSaving(false)
     }
   }
 
   const handleDelete = async () => {
-    if (!note || !confirm("Are you sure you want to delete this note? This action cannot be undone.")) return
+    if (!note) return
 
     try {
-      const response = await fetch(`/api/notes/${note.id}`, {
-        method: "DELETE",
-      })
-
+      const response = await fetch(`/api/notes/${note.id}`, { method: "DELETE" })
       if (response.ok) {
+        // 3. Ganti juga di sini
+        toast.success("Note has been deleted.")
         router.push("/")
       } else {
-        alert("Failed to delete note")
+        toast.error("Error", { description: "Failed to delete note" })
       }
     } catch (error) {
       console.error("Error deleting note:", error)
-      alert("Failed to delete note")
+      toast.error("Error", { description: "Failed to delete note" })
     }
   }
 
@@ -139,13 +149,45 @@ export default function EditNotePage() {
               <h1 className="text-xl font-semibold text-foreground">Edit Note</h1>
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleSubmit} disabled={saving || !title.trim() || !content.trim()}>
-                <Save className="h-4 w-4 mr-2" />
-                {saving ? "Saving..." : "Save"}
-              </Button>
-              <Button variant="destructive" size="sm" onClick={handleDelete}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button disabled={saving || !title.trim() || !content.trim()}>
+                    <Save className="h-4 w-4 mr-2" />
+                    {saving ? "Saving..." : "Save"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Save Changes?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will overwrite the current version of the note. Are you sure you want to save?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleSave}>Save</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete your note.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </div>
@@ -157,7 +199,7 @@ export default function EditNotePage() {
             <CardTitle>Edit Note</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSave} className="space-y-6">
               <div>
                 <label htmlFor="title" className="block text-sm font-medium text-foreground mb-2">
                   Title *
@@ -199,15 +241,6 @@ export default function EditNotePage() {
                 />
               </div>
 
-              <div className="flex gap-4">
-                <Button type="submit" disabled={saving || !title.trim() || !content.trim()}>
-                  <Save className="h-4 w-4 mr-2" />
-                  {saving ? "Saving..." : "Save Changes"}
-                </Button>
-                <Button type="button" variant="outline" asChild>
-                  <Link href={`/notes/${note.id}`}>Cancel</Link>
-                </Button>
-              </div>
             </form>
           </CardContent>
         </Card>

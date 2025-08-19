@@ -10,6 +10,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CardSkeleton } from "@/components/ui/card-skeleton"
 import { Plus, Search, Edit, Trash2, FileText, Filter, X, SortAsc, SortDesc } from "lucide-react"
 import type { Note } from "@/lib/storage"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog" // <-- 1. Impor AlertDialog
+import { toast } from "sonner"
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value)
@@ -79,18 +91,21 @@ export default function HomePage() {
   }
 
   const deleteNote = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this note?")) return
-
     try {
       const response = await fetch(`/api/notes/${id}`, {
         method: "DELETE",
       })
 
       if (response.ok) {
-        setNotes(notes.filter((note) => note.id !== id))
+        toast.success("Note has been deleted.")
+        // Panggil fetchNotes lagi untuk memperbarui daftar dari server
+        fetchNotes();
+      } else {
+        toast.error("Failed to delete note.")
       }
     } catch (error) {
       console.error("Error deleting note:", error)
+      toast.error("An unexpected error occurred.")
     }
   }
 
@@ -374,9 +389,27 @@ export default function HomePage() {
                           <Edit className="h-4 w-4" />
                         </Link>
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => deleteNote(note.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will permanently delete the note titled "{note.title}".
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteNote(note.id)}>
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                   {note.category && (

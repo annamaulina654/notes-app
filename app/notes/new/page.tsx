@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Save } from "lucide-react"
+import { toast } from "sonner"
 
 export default function NewNotePage() {
   const router = useRouter()
@@ -37,18 +38,27 @@ export default function NewNotePage() {
       })
 
       if (response.ok) {
+        // 2. Tampilkan notifikasi sukses
+        toast.success("Note created successfully!")
         router.push("/")
       } else {
         const error = await response.json()
-        alert(error.error || "Failed to create note")
+        // 3. Ganti alert dengan toast eror
+        toast.error("Failed to create note", {
+          description: error.error || "Something went wrong.",
+        })
       }
     } catch (error) {
       console.error("Error creating note:", error)
-      alert("Failed to create note")
+      // 4. Ganti alert dengan toast eror
+      toast.error("Failed to create note", {
+        description: "An unexpected error occurred. Please try again.",
+      })
     } finally {
       setLoading(false)
     }
   }
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -121,15 +131,6 @@ export default function NewNotePage() {
                 />
               </div>
 
-              <div className="flex gap-4">
-                <Button type="submit" disabled={loading || !title.trim() || !content.trim()}>
-                  <Save className="h-4 w-4 mr-2" />
-                  {loading ? "Saving..." : "Save Note"}
-                </Button>
-                <Button type="button" variant="outline" asChild>
-                  <Link href="/">Cancel</Link>
-                </Button>
-              </div>
             </form>
           </CardContent>
         </Card>
