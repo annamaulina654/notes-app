@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { CardSkeleton } from "@/components/ui/card-skeleton"
 import { Plus, Search, Edit, Trash2, FileText, Filter, X, SortAsc, SortDesc } from "lucide-react"
 import type { Note } from "@/lib/storage"
 
@@ -333,8 +334,11 @@ export default function HomePage() {
 
         {/* Notes Grid */}
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-muted-foreground">Loading notes...</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Menampilkan 6 kerangka kartu saat memuat */}
+            {Array.from({ length: 6 }).map((_, i) => (
+              <CardSkeleton key={i} />
+            ))}
           </div>
         ) : notes.length === 0 ? (
           <div className="text-center py-12">
