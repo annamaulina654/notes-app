@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner";
 
-
 export default function EditNotePage() {
   const params = useParams()
   const router = useRouter()
