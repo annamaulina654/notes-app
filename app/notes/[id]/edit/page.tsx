@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Save, Trash2 } from "lucide-react"
-import type { Note } from "@/lib/storage"
+import type { Note } from "@/lib/types"
 import {
   AlertDialog,
   AlertDialogAction,

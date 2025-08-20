@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CardSkeleton } from "@/components/ui/card-skeleton"
 import { Plus, Search, Edit, Trash2, FileText, Filter, X, SortAsc, SortDesc } from "lucide-react"
-import type { Note } from "@/lib/storage"
+import type { Note } from "@/lib/types"
 import {
   AlertDialog,
   AlertDialogAction,

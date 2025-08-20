@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { NoteDetailSkeleton } from "@/components/ui/note-detail-skeleton"
 import { ArrowLeft, Edit } from "lucide-react"
-import type { Note } from "@/lib/storage"
+import type { Note } from "@/lib/types"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function ViewNotePage() {
