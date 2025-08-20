@@ -91,23 +91,36 @@ export default function HomePage() {
   }
 
   const deleteNote = async (id: string) => {
+    // 1. Cari catatan yang akan dihapus dari state saat ini
+    const noteToDelete = notes.find(note => note.id === id);
+    if (!noteToDelete) return;
+
     try {
       const response = await fetch(`/api/notes/${id}`, {
         method: "DELETE",
-      })
+      });
 
       if (response.ok) {
-        toast.success("Note has been deleted.")
-        // Panggil fetchNotes lagi untuk memperbarui daftar dari server
+        toast.success("Note has been deleted.");
+
+        // 2. Cek apakah ini catatan terakhir dalam kategori yang sedang aktif
+        const isLastInCategory = notes.filter(n => n.category === noteToDelete.category).length === 1;
+        if (selectedCategory === noteToDelete.category && isLastInCategory) {
+          // Jika ya, kembalikan filter ke "All Notes"
+          setSelectedCategory("all");
+        }
+
+        // 3. Muat ulang daftar catatan DAN daftar kategori dari server
         fetchNotes();
+        fetchCategories();
       } else {
-        toast.error("Failed to delete note.")
+        toast.error("Failed to delete note.");
       }
     } catch (error) {
-      console.error("Error deleting note:", error)
-      toast.error("An unexpected error occurred.")
+      console.error("Error deleting note:", error);
+      toast.error("An unexpected error occurred.");
     }
-  }
+  };
 
   const clearFilters = () => {
     setSearchQuery("")
