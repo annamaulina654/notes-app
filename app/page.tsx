@@ -1,15 +1,31 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CardSkeleton } from "@/components/ui/card-skeleton"
-import { Plus, Search, Edit, Trash2, FileText, Filter, X, SortAsc, SortDesc } from "lucide-react"
-import type { Note } from "@/lib/types"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { CardSkeleton } from "@/components/ui/card-skeleton";
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  FileText,
+  Filter,
+  X,
+  SortAsc,
+  SortDesc,
+} from "lucide-react";
+import type { Note } from "@/lib/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,26 +36,32 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog" // <-- 1. Impor AlertDialog
-import { toast } from "sonner"
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value)
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {
     const handler = setTimeout(() => {
-      setDebouncedValue(value)
-    }, delay)
+      setDebouncedValue(value);
+    }, delay);
 
     return () => {
-      clearTimeout(handler)
-    }
-  }, [value, delay])
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
 
-  return debouncedValue
+  return debouncedValue;
 }
 
-type SortOption = "updated-desc" | "updated-asc" | "title-asc" | "title-desc" | "created-desc" | "created-asc";
+type SortOption =
+  | "updated-desc"
+  | "updated-asc"
+  | "title-asc"
+  | "title-desc"
+  | "created-desc"
+  | "created-asc";
 
 export default function HomePage() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -52,10 +74,8 @@ export default function HomePage() {
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Ganti `useEffect` ini untuk menyertakan `sortBy`
   useEffect(() => {
     fetchNotes();
-    // fetchCategories hanya perlu dipanggil sekali
   }, [debouncedSearchQuery, selectedCategory, sortBy]);
 
   useEffect(() => {
@@ -67,8 +87,9 @@ export default function HomePage() {
     try {
       const params = new URLSearchParams();
       if (debouncedSearchQuery) params.append("query", debouncedSearchQuery);
-      if (selectedCategory !== "all") params.append("category", selectedCategory);
-      params.append("sortBy", sortBy); // <-- Tambahkan parameter sortBy
+      if (selectedCategory !== "all")
+        params.append("category", selectedCategory);
+      params.append("sortBy", sortBy);
 
       const response = await fetch(`/api/notes?${params}`);
       const data = await response.json();
@@ -82,17 +103,16 @@ export default function HomePage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch("/api/categories")
-      const data = await response.json()
-      setCategories(data.categories || [])
+      const response = await fetch("/api/categories");
+      const data = await response.json();
+      setCategories(data.categories || []);
     } catch (error) {
-      console.error("Error fetching categories:", error)
+      console.error("Error fetching categories:", error);
     }
-  }
+  };
 
   const deleteNote = async (id: string) => {
-    // 1. Cari catatan yang akan dihapus dari state saat ini
-    const noteToDelete = notes.find(note => note.id === id);
+    const noteToDelete = notes.find((note) => note.id === id);
     if (!noteToDelete) return;
 
     try {
@@ -103,14 +123,13 @@ export default function HomePage() {
       if (response.ok) {
         toast.success("Note has been deleted.");
 
-        // 2. Cek apakah ini catatan terakhir dalam kategori yang sedang aktif
-        const isLastInCategory = notes.filter(n => n.category === noteToDelete.category).length === 1;
+        const isLastInCategory =
+          notes.filter((n) => n.category === noteToDelete.category).length ===
+          1;
         if (selectedCategory === noteToDelete.category && isLastInCategory) {
-          // Jika ya, kembalikan filter ke "All Notes"
           setSelectedCategory("all");
         }
 
-        // 3. Muat ulang daftar catatan DAN daftar kategori dari server
         fetchNotes();
         fetchCategories();
       } else {
@@ -123,12 +142,13 @@ export default function HomePage() {
   };
 
   const clearFilters = () => {
-    setSearchQuery("")
-    setSelectedCategory("all")
-    setSortBy("updated-desc")
-  }
+    setSearchQuery("");
+    setSelectedCategory("all");
+    setSortBy("updated-desc");
+  };
 
-  const hasActiveFilters = searchQuery || selectedCategory !== "all" || sortBy !== "updated-desc"
+  const hasActiveFilters =
+    searchQuery || selectedCategory !== "all" || sortBy !== "updated-desc";
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -137,13 +157,13 @@ export default function HomePage() {
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-    })
-  }
+    });
+  };
 
   const truncateContent = (content: string, maxLength = 150) => {
-    if (content.length <= maxLength) return content
-    return content.substring(0, maxLength) + "..."
-  }
+    if (content.length <= maxLength) return content;
+    return content.substring(0, maxLength) + "...";
+  };
 
   const getSortLabel = (sort: SortOption) => {
     const labels = {
@@ -153,13 +173,12 @@ export default function HomePage() {
       "created-asc": "Oldest Created",
       "title-asc": "Title A-Z",
       "title-desc": "Title Z-A",
-    }
-    return labels[sort]
-  }
+    };
+    return labels[sort];
+  };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -168,7 +187,11 @@ export default function HomePage() {
               <h1 className="text-2xl font-bold text-foreground">NotesApp</h1>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+              >
                 <Filter className="h-4 w-4 mr-2" />
                 Filters
               </Button>
@@ -184,9 +207,7 @@ export default function HomePage() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Enhanced Search and Filter Section */}
         <div className="mb-8 space-y-4">
-          {/* Search Bar */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
@@ -207,12 +228,13 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* Collapsible Filters */}
           {showFilters && (
             <Card className="p-4">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-medium text-foreground">Filters & Sorting</h3>
+                  <h3 className="font-medium text-foreground">
+                    Filters & Sorting
+                  </h3>
                   {hasActiveFilters && (
                     <Button variant="ghost" size="sm" onClick={clearFilters}>
                       <X className="h-4 w-4 mr-2" />
@@ -222,10 +244,14 @@ export default function HomePage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Category Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Category</label>
-                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Category
+                    </label>
+                    <Select
+                      value={selectedCategory}
+                      onValueChange={setSelectedCategory}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
@@ -240,10 +266,14 @@ export default function HomePage() {
                     </Select>
                   </div>
 
-                  {/* Sort Options */}
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Sort By</label>
-                    <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Sort By
+                    </label>
+                    <Select
+                      value={sortBy}
+                      onValueChange={(value: SortOption) => setSortBy(value)}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Sort by" />
                       </SelectTrigger>
@@ -292,7 +322,6 @@ export default function HomePage() {
             </Card>
           )}
 
-          {/* Quick Category Filters */}
           <div className="flex flex-wrap gap-2">
             <Button
               variant={selectedCategory === "all" ? "default" : "outline"}
@@ -313,7 +342,6 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Active Filters Display */}
           {hasActiveFilters && (
             <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <span>Active filters:</span>
@@ -360,10 +388,8 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Notes Grid */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Menampilkan 6 kerangka kartu saat memuat */}
             {Array.from({ length: 6 }).map((_, i) => (
               <CardSkeleton key={i} />
             ))}
@@ -371,14 +397,20 @@ export default function HomePage() {
         ) : notes.length === 0 ? (
           <div className="text-center py-12">
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-2">No notes found</h3>
+            <h3 className="text-lg font-medium text-foreground mb-2">
+              No notes found
+            </h3>
             <p className="text-muted-foreground mb-4">
               {searchQuery || selectedCategory !== "all"
                 ? "Try adjusting your search or filter criteria."
                 : "Get started by creating your first note."}
             </p>
             {hasActiveFilters && (
-              <Button variant="outline" onClick={clearFilters} className="mr-2 bg-transparent">
+              <Button
+                variant="outline"
+                onClick={clearFilters}
+                className="mr-2 bg-transparent"
+              >
                 Clear Filters
               </Button>
             )}
@@ -392,10 +424,15 @@ export default function HomePage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {notes.map((note) => (
-              <Card key={note.id} className="group hover:shadow-lg transition-all duration-200">
+              <Card
+                key={note.id}
+                className="group hover:shadow-lg transition-all duration-200"
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
-                    <h3 className="font-semibold text-lg leading-tight line-clamp-2">{note.title}</h3>
+                    <h3 className="font-semibold text-lg leading-tight line-clamp-2">
+                      {note.title}
+                    </h3>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="sm" asChild>
                         <Link href={`/notes/${note.id}/edit`}>
@@ -410,14 +447,19 @@ export default function HomePage() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogTitle>
+                              Are you absolutely sure?
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete the note titled "{note.title}".
+                              This action cannot be undone. This will
+                              permanently delete the note titled "{note.title}".
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteNote(note.id)}>
+                            <AlertDialogAction
+                              onClick={() => deleteNote(note.id)}
+                            >
                               Delete
                             </AlertDialogAction>
                           </AlertDialogFooter>
@@ -432,7 +474,9 @@ export default function HomePage() {
                   )}
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <p className="text-muted-foreground text-sm mb-4 line-clamp-4">{truncateContent(note.content)}</p>
+                  <p className="text-muted-foreground text-sm mb-4 line-clamp-4">
+                    {truncateContent(note.content)}
+                  </p>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>Updated {formatDate(note.updatedAt)}</span>
                     <Button variant="ghost" size="sm" asChild>
@@ -446,5 +490,5 @@ export default function HomePage() {
         )}
       </div>
     </div>
-  )
+  );
 }

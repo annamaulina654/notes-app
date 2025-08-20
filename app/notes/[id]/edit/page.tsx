@@ -1,16 +1,15 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Save, Trash2 } from "lucide-react"
-import type { Note } from "@/lib/types"
+import type React from "react";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft, Save, Trash2 } from "lucide-react";
+import type { Note } from "@/lib/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,51 +20,51 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
 export default function EditNotePage() {
-  const params = useParams()
-  const router = useRouter()
-  const [note, setNote] = useState<Note | null>(null)
-  const [title, setTitle] = useState("")
-  const [content, setContent] = useState("")
-  const [category, setCategory] = useState("")
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const params = useParams();
+  const router = useRouter();
+  const [note, setNote] = useState<Note | null>(null);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [category, setCategory] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (params.id) {
-      fetchNote(params.id as string)
+      fetchNote(params.id as string);
     }
-  }, [params.id])
+  }, [params.id]);
 
   const fetchNote = async (id: string) => {
     try {
-      const response = await fetch(`/api/notes/${id}`)
+      const response = await fetch(`/api/notes/${id}`);
       if (response.ok) {
-        const data = await response.json()
-        const noteData = data.note
-        setNote(noteData)
-        setTitle(noteData.title)
-        setContent(noteData.content)
-        setCategory(noteData.category || "")
+        const data = await response.json();
+        const noteData = data.note;
+        setNote(noteData);
+        setTitle(noteData.title);
+        setContent(noteData.content);
+        setCategory(noteData.category || "");
       } else {
-        console.error("Note not found")
-        router.push("/")
+        console.error("Note not found");
+        router.push("/");
       }
     } catch (error) {
-      console.error("Error fetching note:", error)
-      router.push("/")
+      console.error("Error fetching note:", error);
+      router.push("/");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleSave = async () => {
-    if (!title.trim() || !content.trim() || !note) return
+    if (!title.trim() || !content.trim() || !note) return;
 
-    setSaving(true)
+    setSaving(true);
     try {
       const response = await fetch(`/api/notes/${note.id}`, {
         method: "PUT",
@@ -75,61 +74,70 @@ export default function EditNotePage() {
           content: content.trim(),
           category: category.trim() || undefined,
         }),
-      })
+      });
 
       if (response.ok) {
-        toast.success("Note has been updated successfully.")
-        router.push(`/notes/${note.id}`)
+        toast.success("Note has been updated successfully.");
+        router.push(`/notes/${note.id}`);
       } else {
-        const error = await response.json()
-        toast.error("Uh oh! Something went wrong.", { description: error.error || "Failed to update note" })
+        const error = await response.json();
+        toast.error("Uh oh! Something went wrong.", {
+          description: error.error || "Failed to update note",
+        });
       }
     } catch (error) {
-      console.error("Error updating note:", error)
-      toast.error("Uh oh! Something went wrong.", { description: "Failed to update note" })
+      console.error("Error updating note:", error);
+      toast.error("Uh oh! Something went wrong.", {
+        description: "Failed to update note",
+      });
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleDelete = async () => {
-    if (!note) return
+    if (!note) return;
 
     try {
-      const response = await fetch(`/api/notes/${note.id}`, { method: "DELETE" })
+      const response = await fetch(`/api/notes/${note.id}`, {
+        method: "DELETE",
+      });
       if (response.ok) {
-        // 3. Ganti juga di sini
-        toast.success("Note has been deleted.")
-        router.push("/")
+        toast.success("Note has been deleted.");
+        router.push("/");
       } else {
-        toast.error("Error", { description: "Failed to delete note" })
+        toast.error("Error", { description: "Failed to delete note" });
       }
     } catch (error) {
-      console.error("Error deleting note:", error)
-      toast.error("Error", { description: "Failed to delete note" })
+      console.error("Error deleting note:", error);
+      toast.error("Error", { description: "Failed to delete note" });
     }
-  }
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-muted-foreground">Loading note...</div>
       </div>
-    )
+    );
   }
 
   if (!note) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-foreground mb-2">Note not found</h2>
-          <p className="text-muted-foreground mb-4">The note you're trying to edit doesn't exist.</p>
+          <h2 className="text-2xl font-bold text-foreground mb-2">
+            Note not found
+          </h2>
+          <p className="text-muted-foreground mb-4">
+            The note you're trying to edit doesn't exist.
+          </p>
           <Button asChild>
             <Link href="/">Back to Notes</Link>
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -144,7 +152,9 @@ export default function EditNotePage() {
                   <ArrowLeft className="h-4 w-4" />
                 </Link>
               </Button>
-              <h1 className="text-xl font-semibold text-foreground">Edit Note</h1>
+              <h1 className="text-xl font-semibold text-foreground">
+                Edit Note
+              </h1>
             </div>
             <div className="flex gap-2">
               <AlertDialog>
@@ -158,12 +168,15 @@ export default function EditNotePage() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Save Changes?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will overwrite the current version of the note. Are you sure you want to save?
+                      This will overwrite the current version of the note. Are
+                      you sure you want to save?
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleSave}>Save</AlertDialogAction>
+                    <AlertDialogAction onClick={handleSave}>
+                      Save
+                    </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
@@ -175,14 +188,19 @@ export default function EditNotePage() {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      Are you absolutely sure?
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete your note.
+                      This action cannot be undone. This will permanently delete
+                      your note.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                    <AlertDialogAction onClick={handleDelete}>
+                      Delete
+                    </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
@@ -199,7 +217,10 @@ export default function EditNotePage() {
           <CardContent>
             <form onSubmit={handleSave} className="space-y-6">
               <div>
-                <label htmlFor="title" className="block text-sm font-medium text-foreground mb-2">
+                <label
+                  htmlFor="title"
+                  className="block text-sm font-medium text-foreground mb-2"
+                >
                   Title *
                 </label>
                 <Input
@@ -210,11 +231,16 @@ export default function EditNotePage() {
                   maxLength={200}
                   required
                 />
-                <p className="text-xs text-muted-foreground mt-1">{title.length}/200 characters</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {title.length}/200 characters
+                </p>
               </div>
 
               <div>
-                <label htmlFor="category" className="block text-sm font-medium text-foreground mb-2">
+                <label
+                  htmlFor="category"
+                  className="block text-sm font-medium text-foreground mb-2"
+                >
                   Category (optional)
                 </label>
                 <Input
@@ -226,7 +252,10 @@ export default function EditNotePage() {
               </div>
 
               <div>
-                <label htmlFor="content" className="block text-sm font-medium text-foreground mb-2">
+                <label
+                  htmlFor="content"
+                  className="block text-sm font-medium text-foreground mb-2"
+                >
                   Content *
                 </label>
                 <Textarea
@@ -238,11 +267,10 @@ export default function EditNotePage() {
                   required
                 />
               </div>
-
             </form>
           </CardContent>
         </Card>
       </div>
     </div>
-  )
+  );
 }

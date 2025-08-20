@@ -9,20 +9,25 @@ export async function GET() {
           not: null,
         },
       },
-      distinct: ['category'],
+      distinct: ["category"],
       select: {
         category: true,
       },
       orderBy: {
-        category: 'asc',
-      }
+        category: "asc",
+      },
     });
 
-    const categories = notesWithCategories.map(note => note.category!).filter(Boolean);
+    const categories = notesWithCategories
+      .map((note) => note.category!)
+      .filter(Boolean);
 
     return NextResponse.json({ categories });
   } catch (error) {
     console.error("Error fetching categories:", error);
-    return NextResponse.json({ error: "Failed to fetch categories" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch categories" },
+      { status: 500 }
+    );
   }
 }

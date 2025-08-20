@@ -1,61 +1,74 @@
 import { type NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-// The GET function is already correct. No changes needed here.
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
     const query = searchParams.get("query") || undefined;
     const category = searchParams.get("category") || undefined;
-    const sortBy = searchParams.get("sortBy") || "updated-desc"; // Ambil parameter sortBy
-
-    // Objek untuk menampung konfigurasi pengurutan Prisma
+    const sortBy = searchParams.get("sortBy") || "updated-desc";
     const orderBy: any = {};
-    const [field, direction] = sortBy.split('-');
+    const [field, direction] = sortBy.split("-");
 
     if (["updated", "created", "title"].includes(field)) {
-      orderBy[field === 'updated' ? 'updatedAt' : field === 'created' ? 'createdAt' : 'title'] = direction;
+      orderBy[
+        field === "updated"
+          ? "updatedAt"
+          : field === "created"
+          ? "createdAt"
+          : "title"
+      ] = direction;
     }
 
     const notes = await prisma.note.findMany({
       where: {
         AND: [
-          query ? {
-            OR: [
-              { title: { contains: query, mode: 'insensitive' } },
-              { content: { contains: query, mode: 'insensitive' } },
-            ],
-          } : {},
-          category && category !== 'all' ? { category: { equals: category } } : {},
+          query
+            ? {
+                OR: [
+                  { title: { contains: query, mode: "insensitive" } },
+                  { content: { contains: query, mode: "insensitive" } },
+                ],
+              }
+            : {},
+          category && category !== "all"
+            ? { category: { equals: category } }
+            : {},
         ],
       },
-      orderBy, // Terapkan pengurutan di sini
+      orderBy,
     });
 
     return NextResponse.json({ notes });
   } catch (error) {
     console.error("Error fetching notes:", error);
-    return NextResponse.json({ error: "Failed to fetch notes" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch notes" },
+      { status: 500 }
+    );
   }
 }
 
-// FIX IS APPLIED IN THIS POST FUNCTION
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     let { title, content, category } = body;
 
     if (!title || !content) {
-      return NextResponse.json({ error: "Title and content are required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Title and content are required" },
+        { status: 400 }
+      );
     }
 
     if (title.length > 200) {
-      return NextResponse.json({ error: "Title must be less than 200 characters" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Title must be less than 200 characters" },
+        { status: 400 }
+      );
     }
 
-    // This ensures an empty string category becomes null in the database
     const finalCategory = category?.trim() ? category.trim() : null;
-
     const note = await prisma.note.create({
       data: {
         title: title.trim(),
@@ -67,6 +80,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ note }, { status: 201 });
   } catch (error) {
     console.error("Error creating note:", error);
-    return NextResponse.json({ error: "Failed to create note" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create note" },
+      { status: 500 }
+    );
   }
 }

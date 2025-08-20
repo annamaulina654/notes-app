@@ -1,5 +1,5 @@
-import { Card, CardHeader, CardContent } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function NoteDetailSkeleton() {
   return (
@@ -19,5 +19,5 @@ export function NoteDetailSkeleton() {
         <Skeleton className="h-4 w-5/6 rounded-md" />
       </CardContent>
     </Card>
-  )
+  );
 }
